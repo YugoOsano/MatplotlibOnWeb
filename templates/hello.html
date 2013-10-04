@@ -1,0 +1,13 @@
+<!doctype html>
+<title>Hello from Flask</title>
+{% if name %}
+  <h1>Hello {{ name }}!</h1>
+  <p>
+    <a href="{{ url_for('showimage') }}">Show the graph</a>
+  </p>
+  {% else %}
+  <h1>Hello World!</h1>
+  <p>
+   <a href="{{ url_for('generateimage') }}">Generate a graph</a>
+  </p>
+  {% endif %}
