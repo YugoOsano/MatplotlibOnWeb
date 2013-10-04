@@ -30,17 +30,27 @@ app.config['SECRET_KEY']='development key'
 #-- prepare the image file name -- 
 imgfile = 'testimg.png'
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def index():
+
+    #-- method is POST when the submit button pressed --
+    if request.method == 'POST':
+        session['graphtitle'] = request.form['title']
+        return redirect(url_for('generateimage'))
+
     return render_template('hello.html')   
+
+#  --- understand 'return redirect' within flaskr.py
 
 @app.route('/test/')
 @app.route('/test/<gtitle>')
 def generateimage(gtitle = None):
 
-    nameforhello = 'Matplotlib'
+    nameforhello = session['graphtitle'] #'Matplotlib' #
+
     timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
     g.imgfile = 'testimg' + timestamp + '.png'
+
     session['imgfile'] = 'testimg' + timestamp + '.png'
 
     t = [0.0, 2.0, 10.0]
@@ -49,12 +59,13 @@ def generateimage(gtitle = None):
     plt.plot(t,s, linewidth = 1.0)
     plt.xlabel('time (s)')
     plt.ylabel('value (a.u.)')
-    plt.title(gtitle)
+    #plt.title(gtitle)
+
+    plt.title(session['graphtitle'])
     plt.grid(True)
     plt.savefig('static/' + session['imgfile'])
     #pylab.show()
     return render_template('hello.html', name = nameforhello)
-    #return render_template('imageframe.html', imagefile = session['imgfile'])
 
 @app.route('/show/')
 def showimage():
