@@ -13,6 +13,10 @@
 
 from flask import Flask, request, session, g, redirect, url_for, send_from_directory
 from flask import render_template
+
+import os
+import re
+import numpy as np
 import pylab as plt
 import datetime
 
@@ -33,35 +37,61 @@ imgfile = 'testimg.png'
 @app.route('/', methods=['GET', 'POST'])
 def index():
 
+    session['gproperty'] = \
+        {'title' : '',
+         'xlabel': '',
+         'ylabel': '',
+         'fontsize': 15}
+         
     #-- method is POST when the submit button pressed --
     if request.method == 'POST':
-        session['graphtitle'] = request.form['title']
+        session['gproperty'] =  {'title' : request.form['title'],
+                                 'xlabel': request.form['xlabel'],
+                                 'ylabel': request.form['ylabel'],
+                                 'fontsize': request.form['fontsize'] }
+        session['rawdata'] = request.form['data']
         return redirect(url_for('generateimage'))
 
     return render_template('hello.html')   
 
-#  --- understand 'return redirect' within flaskr.py
+#  --- next to do; value transfer without using session: 
+#      can't avoid using database?
 
 @app.route('/test/')
 @app.route('/test/<gtitle>')
 def generateimage(gtitle = None):
 
-    nameforhello = session['graphtitle'] #'Matplotlib' #
+    #-- remove old png files --
+    os.system('rm static/*.png')
+
+    nameforhello = session['gproperty']['title']
 
     timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
     g.imgfile = 'testimg' + timestamp + '.png'
 
     session['imgfile'] = 'testimg' + timestamp + '.png'
 
-    t = [0.0, 2.0, 10.0]
-    s = [-1.0, 5.0, 20.0]
+    #--- data processing : split string to numbers after strip spaces ---
+    #    !!! Need Exception process for wrong data  !!!
+    if session['rawdata'] != '':
+        nlist = map(float, \
+                        re.split('\s+|\n|\t|,', session['rawdata'].strip())) 
+        t = nlist[0:][::2] #-- even elements
+        s = nlist[1:][::2] #-- odd  elements
+    else:
+        t = np.arange(0, 2.0*np.pi, 0.02*np.pi)
+        s = np.sin(t)
+
+    tmpfont = session['gproperty']['fontsize']
 
     plt.plot(t,s, linewidth = 1.0)
-    plt.xlabel('time (s)')
-    plt.ylabel('value (a.u.)')
+    plt.xlabel(session['gproperty']['xlabel'], fontsize = tmpfont)
+    plt.xticks(fontsize = tmpfont)
+    plt.ylabel(session['gproperty']['ylabel'], fontsize = tmpfont)
+    plt.yticks(fontsize = tmpfont)
     #plt.title(gtitle)
 
-    plt.title(session['graphtitle'])
+    plt.title(session['gproperty']['title'], fontsize = tmpfont)
     plt.grid(True)
     plt.savefig('static/' + session['imgfile'])
     #pylab.show()
